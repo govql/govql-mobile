@@ -41,3 +41,22 @@ example
 # generated native folders
 /ios
 /android
+
+# env files: keep a template, ignore real ones
+.env
+.env.*
+!.env.example
+
+# EAS / signing credentials
+credentials.json
+*.ipa
+*.apk
+*.aab
+
+# test output
+coverage/
+
+# editors (optional; see note below)
+.vscode/*
+!.vscode/extensions.json
+.idea/
