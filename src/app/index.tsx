@@ -1,16 +1,14 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCurrentMembers } from '@/hooks/use-current-members';
 import { seatLabel, type Member } from '@/lib/members';
 
 // Task 0001: a plain list proving the data path. Task 0003 turns it into the finished
 // home screen (House/Senate sections, search, tap through to a member).
 export default function HomeScreen() {
-  const insets = useSafeAreaInsets();
   const { members, totalCount, loading, error, refetch } = useCurrentMembers();
 
   if (loading && members.length === 0) {
@@ -47,11 +45,9 @@ export default function HomeScreen() {
         onRefresh={refetch}
         refreshing={loading}
         style={styles.list}
-        contentContainerStyle={{
-          paddingTop: insets.top + Spacing.three,
-          paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
-          paddingHorizontal: Spacing.three,
-        }}
+        // The stack header and home indicator set the insets (iOS 26 headers are transparent).
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
             <ThemedText type="subtitle">Current Congress</ThemedText>
@@ -85,6 +81,9 @@ const styles = StyleSheet.create({
   list: {
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  listContent: {
+    padding: Spacing.three,
   },
   centered: {
     flex: 1,
