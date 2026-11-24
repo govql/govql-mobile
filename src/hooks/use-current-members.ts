@@ -13,7 +13,7 @@ const CurrentMembersQuery = graphql(`
       totalCount
       nodes {
         bioguideId
-        officialFull
+        officialFullBroken
         firstName
         lastName
         legislatorTermsByBioguideIdList(orderBy: END_DATE_DESC, first: 1) {
