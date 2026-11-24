@@ -23,6 +23,23 @@ npx expo install --fix      # fix incompatible package versions
 
 Run lint and typecheck before declaring any task done.
 
+## Active plan
+
+Work follows `plans/PLAN.md`: one task per branch (`NNNN-<slug>`), one PR per task.
+
+## Data and GraphQL
+
+- All data comes from the public GovQL GraphQL API (`EXPO_PUBLIC_API_URL` in `.env`; copy
+  `.env.example`). Read it only as `process.env.EXPO_PUBLIC_API_URL`, since Expo inlines it.
+- Client: **urql** (`src/lib/graphql-client.ts`). Screens never call urql directly; each
+  query lives in its own hook in `src/hooks/` and returns app-shaped data.
+- Write queries with `graphql()` from `@/gql`, then run `npm run codegen` to regenerate
+  typed documents in `src/gql/`. Commit `src/gql/`; never edit it by hand.
+- CI (`.github/workflows/api-compat.yml`) regenerates and type-checks on every PR and daily,
+  because the API can change without any commit here. If it fails, the API changed: fix
+  the query, or raise an issue in `govql/govql`.
+- `npm run typecheck`, `npm run lint`, and `npm run codegen` are the checks to run.
+
 ## Navigation & Routing
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.

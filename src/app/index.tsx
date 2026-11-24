@@ -1,98 +1,114 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useCurrentMembers } from '@/hooks/use-current-members';
+import { seatLabel, type Member } from '@/lib/members';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+// Task 0001: a plain list proving the data path. Task 0003 turns it into the finished
+// home screen (House/Senate sections, search, tap through to a member).
+export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const { members, totalCount, loading, error, refetch } = useCurrentMembers();
+
+  if (loading && members.length === 0) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <ThemedView style={styles.centered}>
+        <ActivityIndicator />
+        <ThemedText type="small">Loading members of Congress…</ThemedText>
+      </ThemedView>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
+  if (error && members.length === 0) {
+    return (
+      <ThemedView style={[styles.centered, { paddingHorizontal: Spacing.four }]}>
+        <ThemedText style={styles.textCenter}>
+          Couldn’t load members of Congress. Check your connection and try again.
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.textCenter}>
+          {error.message}
+        </ThemedText>
+        <Pressable accessibilityRole="button" onPress={refetch} style={styles.retry}>
+          <ThemedText type="smallBold">Try again</ThemedText>
+        </Pressable>
+      </ThemedView>
+    );
+  }
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <ThemedView style={styles.container}>
+      <FlatList
+        data={members}
+        keyExtractor={(member) => member.bioguideId}
+        renderItem={({ item }) => <MemberRow member={item} />}
+        onRefresh={refetch}
+        refreshing={loading}
+        style={styles.list}
+        contentContainerStyle={{
+          paddingTop: insets.top + Spacing.three,
+          paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+          paddingHorizontal: Spacing.three,
+        }}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <ThemedText type="subtitle">Current Congress</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {totalCount} members currently serving
+            </ThemedText>
+          </View>
+        }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    </ThemedView>
   );
 }
 
-export default function HomeScreen() {
+function MemberRow({ member }: { member: Member }) {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <View style={styles.row}>
+      <ThemedText type="smallBold">{member.name}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {seatLabel(member)} · {member.party}
+      </ThemedText>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+  },
+  list: {
+    width: '100%',
     maxWidth: MaxContentWidth,
   },
-  heroSection: {
+  centered: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    gap: Spacing.three,
   },
-  title: {
+  textCenter: {
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+  retry: {
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  header: {
+    gap: Spacing.one,
+    paddingBottom: Spacing.three,
+  },
+  row: {
+    paddingVertical: Spacing.two,
+    gap: Spacing.half,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#8888',
   },
 });

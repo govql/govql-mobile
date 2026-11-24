@@ -85,7 +85,7 @@ Durable decisions that apply across all tasks:
 Milestone 1: a thin, end-to-end slice. Browse the current Congress, tap a member, see
 their recent votes; then find your own members by address, location, or ZIP.
 
-- [ ] 0001 · GraphQL client, codegen, and API-compatibility CI → tasks/0001-api-client-and-codegen.md
+- [~] 0001 · GraphQL client, codegen, and API-compatibility CI → tasks/0001-api-client-and-codegen.md
 - [ ] 0002 · Clear out the starter template and add a basic app shell (after 0001) → tasks/0002-app-shell.md
 - [ ] 0003 · Browse the current Congress (home screen) (after 0001, 0002) → tasks/0003-browse-congress.md
 - [ ] 0004 · Member screen with recent votes (after 0002, 0003) → tasks/0004-member-recent-votes.md
