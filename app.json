@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "govql-mobile",
+    "name": "GovQL",
     "slug": "govql-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,9 @@
     "scheme": "govqlmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.chasephilpot.govqlmobile"
     },
     "android": {
       "adaptiveIcon": {

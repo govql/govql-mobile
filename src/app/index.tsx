@@ -1,39 +1,36 @@
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Link } from 'expo-router';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCurrentMembers } from '@/hooks/use-current-members';
+import { useTheme } from '@/hooks/use-theme';
 import { seatLabel, type Member } from '@/lib/members';
 
-// Task 0001: a plain list proving the data path. Task 0003 turns it into the finished
-// home screen (House/Senate sections, search, tap through to a member).
+// Home: every currently serving member, as a plain list. Task 0003 adds House/Senate
+// sections and search.
 export default function HomeScreen() {
+  const theme = useTheme();
   const { members, totalCount, loading, error, refetch } = useCurrentMembers();
 
   if (loading && members.length === 0) {
-    return (
-      <ThemedView style={styles.centered}>
-        <ActivityIndicator />
-        <ThemedText type="small">Loading members of Congress…</ThemedText>
-      </ThemedView>
-    );
+    return <LoadingState label="Loading members of Congress…" />;
   }
 
   if (error && members.length === 0) {
     return (
-      <ThemedView style={[styles.centered, { paddingHorizontal: Spacing.four }]}>
-        <ThemedText style={styles.textCenter}>
-          Couldn’t load members of Congress. Check your connection and try again.
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.textCenter}>
-          {error.message}
-        </ThemedText>
-        <Pressable accessibilityRole="button" onPress={refetch} style={styles.retry}>
-          <ThemedText type="smallBold">Try again</ThemedText>
-        </Pressable>
-      </ThemedView>
+      <ErrorState
+        message="Couldn’t load members of Congress. Check your connection and try again."
+        detail={error.message}
+        onRetry={refetch}
+      />
     );
+  }
+
+  if (members.length === 0) {
+    return <EmptyState title="No members found" message="Pull down to try again." />;
   }
 
   return (
@@ -49,27 +46,36 @@ export default function HomeScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <ThemedText type="subtitle">Current Congress</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {totalCount} members currently serving
-            </ThemedText>
-          </View>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.header}>
+            {totalCount} members currently serving
+          </ThemedText>
         }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => (
+          <View style={[styles.separator, { backgroundColor: theme.border }]} />
+        )}
       />
     </ThemedView>
   );
 }
 
 function MemberRow({ member }: { member: Member }) {
+  const theme = useTheme();
+  const seat = `${seatLabel(member)} · ${member.party}`;
   return (
-    <View style={styles.row}>
-      <ThemedText type="smallBold">{member.name}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {seatLabel(member)} · {member.party}
-      </ThemedText>
-    </View>
+    <Link href={{ pathname: '/member/[bioguideId]', params: { bioguideId: member.bioguideId } }} asChild>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={`${member.name}, ${seat}`}
+        style={({ pressed }) => [
+          styles.row,
+          pressed && { backgroundColor: theme.backgroundSelected },
+        ]}>
+        <ThemedText type="smallBold">{member.name}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {seat}
+        </ThemedText>
+      </Pressable>
+    </Link>
   );
 }
 
@@ -85,22 +91,8 @@ const styles = StyleSheet.create({
   listContent: {
     padding: Spacing.three,
   },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.three,
-  },
-  textCenter: {
-    textAlign: 'center',
-  },
-  retry: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-  },
   header: {
-    gap: Spacing.one,
-    paddingBottom: Spacing.three,
+    paddingBottom: Spacing.two,
   },
   row: {
     paddingVertical: Spacing.two,
@@ -108,6 +100,5 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#8888',
   },
 });

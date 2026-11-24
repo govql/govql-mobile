@@ -9,7 +9,11 @@ export default function RootLayout() {
   return (
     <UrqlProvider value={graphqlClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack />
+        <Stack>
+          <Stack.Screen name="index" options={{ title: 'Congress' }} />
+          {/* The member screen sets its own title once it knows the member's name. */}
+          <Stack.Screen name="member/[bioguideId]" options={{ title: 'Member' }} />
+        </Stack>
       </ThemeProvider>
     </UrqlProvider>
   );
