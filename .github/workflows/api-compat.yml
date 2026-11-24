@@ -1,0 +1,46 @@
+name: API compatibility
+
+# Regenerates GraphQL types from the live GovQL API and type-checks the app.
+# Runs daily as well as on PRs, because the API can change without any commit here.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 13 * * *' # daily, 13:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-compat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Regenerate types from the live API schema
+        run: npm run codegen
+        env:
+          EXPO_PUBLIC_API_URL: https://api.govql.us/graphql
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Generated types are up to date
+        run: |
+          if ! git diff --exit-code -- src/gql; then
+            echo "::error::src/gql is out of date. The API schema changed, or codegen was not run. Run 'npm run codegen' and commit the result."
+            exit 1
+          fi

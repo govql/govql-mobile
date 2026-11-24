@@ -21,8 +21,9 @@ and tested before task 0005.
   state, and district. Party is spelled out in text, never shown by colour alone.
 - **Delegates are included**: DC, Guam, the U.S. Virgin Islands, American Samoa, and the
   Northern Mariana Islands each have a Delegate, and Puerto Rico has a Resident
-  Commissioner. They are stored as House terms (`termType` `rep`), so identify them by
-  state code and label them with their title. They can vote in committee but not on final
+  Commissioner. They are stored as House terms (`termType` `rep`) with `district: 0`,
+  the same as at-large seats, so check the state code **before** treating 0 as at-large
+  (`seatLabel()` in `src/lib/members.ts` does this), and label them with their title. They can vote in committee but not on final
   passage, so don't compare their vote counts with other members'.
 - **At-large seats** (`district = 0`) show as "At-large", not "District 0".
 - **Ordering**: alphabetical by state, then by district (House) or by last name (Senate).

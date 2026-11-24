@@ -67,3 +67,15 @@ and 0003 build on rather than replace.
 - 2026-11-24: An unfiltered `allLegislators(first: 3)` returns members from 1817–1951
   with `officialFull: null`, because the API holds every member since 1789. Hence the
   current-members filter above.
+- 2026-11-24: Ran the `CurrentMembers` query live, and it works as drafted. 539 current
+  members: 100 `sen` and 439 `rep` (433 voting seats, so 2 vacancies, plus 6 delegates).
+  One current member (`W000832`) has a blank `officialFull`, so the name fallback is
+  needed. Delegates have `district: 0`, the same as at-large seats; senators have
+  `district: null`.
+- 2026-11-24: Typecheck and lint failed on two web-only starter files
+  (`app-tabs.web.tsx`, `use-color-scheme.web.ts`); both errors predated this task. Deleted
+  them, with `animated-icon.web.tsx` and its CSS, since the app targets iOS and Android only.
+- 2026-11-24: The API only accepts POST. urql sends short queries as GET by default, so the
+  client sets `preferGetMethod: false`.
+- 2026-11-24: Verified the list in the iOS Simulator (iPhone 16 Pro). The small-screen
+  check was skipped for this task at the owner's request.
