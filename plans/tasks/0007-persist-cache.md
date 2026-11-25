@@ -41,7 +41,7 @@ only, so every launch refetches.
 
 ## AFK tasks
 
-- [ ] Choose the storage library (check SDK 58 docs); record the choice and reason.
+- [ ] Storage: reuse `expo-sqlite/kv-store`, chosen in task 0005 (in Expo Go, sync read). Revisit only if the data outgrows key-value storage.
 - [ ] Persist and restore the current-members list with `fetchedAt` and a versioned key.
 - [ ] Same for each member's recent votes (task 0004).
 - [ ] Background refresh when older than the refresh age; pull-to-refresh forces it.
