@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from 'urql';
 
 import { graphql } from '@/gql';
-import { displayName, type Member } from '@/lib/members';
+import { toMember, type Member } from '@/lib/members';
 
 // Every member whose latest term ends after today (about 540 people), in one request.
 const CurrentMembersQuery = graphql(`
@@ -39,20 +39,11 @@ export function useCurrentMembers() {
   const members = useMemo<Member[]>(() => {
     const nodes = result.data?.allLegislators?.nodes ?? [];
     return nodes.flatMap((node) => {
-      const term = node?.legislatorTermsByBioguideIdList[0];
-      if (!node || !term) return [];
-      return [
-        {
-          bioguideId: node.bioguideId,
-          name: displayName(node),
-          chamber: term.termType === 'sen' ? 'senate' : 'house',
-          party: term.party ?? 'Party unknown',
-          state: term.state ?? '',
-          district: term.district ?? null,
-        },
-      ];
+      if (!node) return [];
+      const member = toMember({ ...node, terms: node.legislatorTermsByBioguideIdList }, today);
+      return member ? [member] : [];
     });
-  }, [result.data]);
+  }, [result.data, today]);
 
   return {
     members,
