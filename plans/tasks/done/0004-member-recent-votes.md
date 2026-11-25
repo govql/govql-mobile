@@ -46,19 +46,36 @@ short or empty. The empty state must say why rather than imply they skipped vote
 
 ## AFK tasks
 
-- [ ] Member header: name, chamber, party, state/district (reuse the 0003 helpers for name and seat label).
-- [ ] Recent-votes query with generated types, plus a position-to-meaning helper with unit tests covering every known value.
-- [ ] Vote rows: date, question, result, this member's position.
-- [ ] Loading, empty ("no recorded votes"), and error states.
-- [ ] Pull to refresh.
+- [x] Member header: name, chamber, party, state/district (reuse the 0003 helpers for name and seat label).
+- [x] Recent-votes query with generated types, plus a position-to-meaning helper with unit tests covering every known value.
+- [x] Vote rows: date, question, result, this member's position.
+- [x] Loading, empty ("no recorded votes"), and error states.
+- [x] Pull to refresh.
 
 ## Human-in-the-loop tasks
 
-- [ ] [verify] Compare one senator's and one representative's recent votes against the official Senate and House Clerk sites.
-- [ ] [verify] Note the query time from the device; record it in this file's log.
+- [x] [verify] Compare one senator's and one representative's recent votes against the official Senate and House Clerk sites.
+- [-] [verify] Note the query time from the device. Not recorded on the device; see the command-line timing in the log.
 
 ## Acceptance criteria
 
-- [ ] Each member screen shows that member's 10 most recent votes, newest first, matching the official record.
-- [ ] House and Senate position wording is shown consistently.
-- [ ] The screen makes at most two API requests per visit.
+- [x] Each member screen shows that member's 10 most recent votes, newest first, matching the official record.
+- [x] House and Senate position wording is shown consistently.
+- [x] The screen makes at most two API requests per visit.
+
+## Log
+
+- 2026-11-25: The draft `RecentVotes` query worked as written. Timed from the command line:
+  0.20 s for a senator (B001261), 0.07 s for a House member (F000468). Fast enough; no
+  `govql/govql` issue needed.
+- 2026-11-25: House votes are stored as both `Yea`/`Nay` and `Aye`/`No`, depending on
+  the kind of vote, so grouping by meaning is required, not optional.
+- 2026-11-25: Position mapping copied from the MCP server's
+  `mcp-server/src/govql_mcp_server/tools/get_voting_record.py` (`_POS_KEY`): yes =
+  Yea/Aye/Guilty, no = Nay/No/Not Guilty, Present, Not Voting, anything else = other.
+  If that file changes, update `src/lib/votes.ts` to match.
+- 2026-11-25: The member screen makes one request per visit (votes); the member's details
+  come from the cached members list. Opening a member directly before the list has loaded
+  makes two.
+- 2026-11-25: Checked in the iOS Simulator against the official Senate and House Clerk
+  records; long nomination questions wrap fully.
