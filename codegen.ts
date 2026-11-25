@@ -7,7 +7,7 @@ const schemaUrl = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.govql.us/graph
 
 const config: CodegenConfig = {
   schema: schemaUrl,
-  documents: ['src/**/*.{ts,tsx}', '!src/gql/**/*'],
+  documents: ['src/**/*.{ts,tsx}', '!src/gql/**/*', '!src/data/**/*'],
   ignoreNoDocuments: false,
   generates: {
     './src/gql/': {

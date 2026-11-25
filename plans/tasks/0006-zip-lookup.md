@@ -12,6 +12,35 @@ task 0005: type a 5-digit ZIP. If the ZIP lies in one congressional district, sh
 members right away. If it spans several, ask the user to pick one, or to enter an address
 or use their location to settle it.
 
+## Decisions (2026-11-25)
+
+- **The table must match the members shown (same rule as 0005)**: the table records its
+  Congress. When the members in office are from a different Congress, ZIP entry says it
+  isn't updated for the new districts yet and points to the address or location instead.
+  It never falls back to old districts. Rebuild the table when Census publishes the new
+  file.
+- **Multi-district ZIPs list every district** the ZIP touches, each with its
+  representative's name, plus "Not sure? Enter your street address." No percentages, no
+  "likely" district: the file has land area but not population, and land area misleads in
+  cities. Drop only zero-land parts (when the ZIP has land elsewhere) and Census's `ZZ`
+  parts (water, not a district).
+- **One field**: the address field also accepts a ZIP (5 digits, or ZIP+4, of which only
+  the first 5 are used), rather than adding a second text field.
+- **Format**: a generated TypeScript file holding one string, parsed into a lookup on first
+  use, so `tsc` doesn't have to type a 33,000-key JSON object.
+
+## Census relationship file facts (checked 2026-11-25)
+
+- 119th: `https://www2.census.gov/geo/docs/maps-data/data/rel2020/cd-sld/tab20_cd11920_zcta520_natl.txt`
+  (6.2 MB, pipe-delimited, last modified 2024-10-24). No 120th file published yet; only
+  118th and 119th exist in that folder.
+- 33,791 ZCTAs; 5,882 (17%) touch more than one district. Columns used:
+  `GEOID_CD119_20` (state FIPS + district: `00` at-large, `98` delegate, `ZZ` water),
+  `GEOID_ZCTA5_20`, `AREALAND_PART`. Rows with an empty ZCTA are district parts outside
+  any ZCTA; skip them.
+- Example gaps: 20500 (White House) has no ZCTA. Territories are included (e.g. 96910 Guam,
+  00601 Puerto Rico).
+
 ## Design notes
 
 - **The Census Geocoder can't look up a ZIP code.** Instead, ship the Census
@@ -44,3 +73,13 @@ or use their location to settle it.
 - [ ] A single-district ZIP shows the members with no extra step.
 - [ ] A multi-district ZIP always asks the user, and never guesses silently.
 - [ ] The ZIP lookup itself works offline (the GovQL members query still needs a connection).
+
+## Log
+
+- 2026-11-25: Built from the 119th file: 33,791 ZIPs, 5,829 in more than one district once
+  zero-land and water (`ZZ`) parts are dropped (5,882 before). `src/data/zip-districts.ts`
+  is 340 KB (84 KB gzipped). In the iOS Hermes bundle (`npx expo export --platform ios`)
+  the table takes about 340 KB of 3.1 MB.
+- 2026-11-25: No 120th Congress relationship file published yet. From January 3, 2027,
+  ZIP entry will show "not updated for the new districts" until the table is rebuilt with
+  `npm run build:zip-districts -- --congress 120`.

@@ -1,13 +1,14 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
+import { DistrictRow } from '@/components/district-row';
 import { EmptyState, LoadingState } from '@/components/screen-states';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCurrentMembers } from '@/hooks/use-current-members';
 import { useTheme } from '@/hooks/use-theme';
 import { congressForDate } from '@/lib/congress';
-import { houseMembersInState, placeLabel, seatLabel, STATE_NAMES, type Member } from '@/lib/members';
+import { houseMembersInState, STATE_NAMES, type Member } from '@/lib/members';
 import { saveDistrict } from '@/lib/saved-district';
 
 // Step 2 of "Choose my state and district": each district with its representative's name,
@@ -46,21 +47,9 @@ export default function ChooseDistrictScreen() {
         }
         ListEmptyComponent={<EmptyState title="No House members found for this state" />}
         ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.border }]} />}
-        renderItem={({ item }) => {
-          const place = placeLabel(item.state, item.district ?? 0);
-          return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${place}: ${item.name}, ${item.party}`}
-              onPress={() => choose(item)}
-              style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.backgroundSelected }]}>
-              <ThemedText type="smallBold">{place}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {item.name} · {seatLabel(item).split(',')[0]} · {item.party}
-              </ThemedText>
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) => (
+          <DistrictRow state={item.state} district={item.district ?? 0} member={item} onPress={() => choose(item)} />
+        )}
       />
     </>
   );
@@ -74,12 +63,6 @@ const styles = StyleSheet.create({
   },
   intro: {
     padding: Spacing.three,
-  },
-  row: {
-    minHeight: 44,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    gap: Spacing.half,
   },
   separator: {
     height: StyleSheet.hairlineWidth,

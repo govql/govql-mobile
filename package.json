@@ -49,6 +49,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "build:zip-districts": "node scripts/build-zip-districts.mjs",
     "codegen": "graphql-codegen --config codegen.ts",
     "test": "jest"
   },
