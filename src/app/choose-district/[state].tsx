@@ -15,7 +15,7 @@ import { saveDistrict } from '@/lib/saved-district';
 export default function ChooseDistrictScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { state } = useLocalSearchParams<'/choose-district/[state]'>();
+  const { state } = useLocalSearchParams<{ state: string }>();
   const { members, congress, today, loading } = useCurrentMembers();
   const stateName = STATE_NAMES[state] ?? state;
   const house = houseMembersInState(members, state);

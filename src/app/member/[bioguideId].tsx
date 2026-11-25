@@ -15,7 +15,7 @@ import { formatVoteDate, positionLabel } from '@/lib/votes';
 // 10 most recent roll-call votes (one request).
 export default function MemberScreen() {
   const theme = useTheme();
-  const { bioguideId } = useLocalSearchParams<'/member/[bioguideId]'>();
+  const { bioguideId } = useLocalSearchParams<{ bioguideId: string }>();
   const { members, loading: membersLoading } = useCurrentMembers();
   const member = members.find((m) => m.bioguideId === bioguideId);
   const { votes, loading, error, refetch } = useRecentVotes(bioguideId);

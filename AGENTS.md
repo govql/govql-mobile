@@ -44,6 +44,7 @@ Work follows `plans/PLAN.md`: one task per branch (`NNNN-<slug>`), one PR per ta
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
+- Type route params explicitly (`useLocalSearchParams<{ id: string }>()`); CI has no generated typed routes.
 - Docs: https://docs.expo.dev/router/introduction.md
 
 ## Building with EAS
