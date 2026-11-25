@@ -33,20 +33,29 @@ and tested before task 0005.
 
 ## AFK tasks
 
-- [ ] Home screen using `useCurrentMembers()`: House and Senate sections.
-- [ ] Search box filtering by name or state (full name and two-letter code).
-- [ ] Row component, with the delegate and at-large labels.
-- [ ] Helpers with unit tests: display name, seat label (district / at-large / delegate title), current-term selection.
-- [ ] Loading, error-with-retry, and "no matches" states; pull to refresh.
-- [ ] Tap a row → `/member/[bioguideId]`.
+- [x] Home screen using `useCurrentMembers()`: House and Senate sections.
+- [x] Search box filtering by name or state (full name and two-letter code).
+- [x] Row component, with the delegate and at-large labels.
+- [x] Helpers with unit tests: display name, seat label (district / at-large / delegate title), current-term selection.
+- [x] Loading, error-with-retry, and "no matches" states; pull to refresh.
+- [x] Tap a row → `/member/[bioguideId]`.
 
 ## Human-in-the-loop tasks
 
-- [ ] [verify] Counts look right (about 100 senators, 435 representatives, 6 delegates, minus vacancies); spot-check a few members against congress.gov.
-- [ ] [verify] Search works for a name, a state name, and a state code, on a small (SE) and a large (Pro Max) simulator.
+- [x] [verify] Counts look right: Senate 100, House 439 (433 voting seats, 2 vacancies, 6 delegates).
+- [-] [verify] Spot-check a few members against congress.gov. Not done.
+- [x] [verify] Search works for a name, a state name, and a state code, and tapping a row opens the member (iOS Simulator). Small-screen (SE) check skipped at the owner's request.
+
+## Log
+
+- 2026-11-25: The list is cached in memory only (one request per launch); keeping it
+  across restarts moved to task 0007.
+- 2026-11-25: Added Jest (`jest-expo`, Jest 30 as SDK 58 requires) and an `npm test` step
+  in CI. `@parcel/watcher`'s install script is left unapproved; only codegen's watch mode
+  uses it.
 
 ## Acceptance criteria
 
-- [ ] The home screen lists every currently serving member, including delegates, and no former members.
-- [ ] The screen makes one API request per app launch, and none when returning from a member screen.
-- [ ] Tapping a member opens the member route.
+- [x] The home screen lists every currently serving member, including delegates, and no former members.
+- [x] The screen makes one API request per app launch, and none when returning from a member screen.
+- [x] Tapping a member opens the member route.
