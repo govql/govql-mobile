@@ -4,7 +4,10 @@ import {
   currentTerm,
   displayName,
   groupByChamber,
+  houseMembersInState,
   isDelegate,
+  membersForDistrict,
+  placeLabel,
   matchesSearch,
   seatLabel,
   toMember,
@@ -22,6 +25,7 @@ function member(overrides: Partial<Member>): Member {
     party: 'Independent',
     state: 'TX',
     district: 7,
+    termStart: '2025-01-03',
     ...overrides,
   };
 }
@@ -102,7 +106,16 @@ describe('toMember', () => {
           officialFull: 'John Barrasso',
           firstName: 'John',
           lastName: 'Barrasso',
-          terms: [{ termType: 'sen', party: 'Republican', state: 'WY', district: null, endDate: '2031-01-03' }],
+          terms: [
+            {
+              termType: 'sen',
+              party: 'Republican',
+              state: 'WY',
+              district: null,
+              startDate: '2025-01-03',
+              endDate: '2031-01-03',
+            },
+          ],
         },
         TODAY
       )
@@ -114,6 +127,7 @@ describe('toMember', () => {
       party: 'Republican',
       state: 'WY',
       district: null,
+      termStart: '2025-01-03',
     });
   });
 
@@ -162,5 +176,56 @@ describe('groupByChamber', () => {
 
   it('leaves out an empty chamber', () => {
     expect(groupByChamber([member({ chamber: 'house' })]).map((s) => s.title)).toEqual(['House']);
+  });
+});
+
+describe('membersForDistrict', () => {
+  const members = [
+    member({ bioguideId: 'wy-s2', chamber: 'senate', state: 'WY', lastName: 'Lummis', district: null }),
+    member({ bioguideId: 'wy-s1', chamber: 'senate', state: 'WY', lastName: 'Barrasso', district: null }),
+    member({ bioguideId: 'wy-h', chamber: 'house', state: 'WY', district: 0 }),
+    member({ bioguideId: 'tx-7', chamber: 'house', state: 'TX', district: 7 }),
+    member({ bioguideId: 'tx-9', chamber: 'house', state: 'TX', district: 9 }),
+    member({ bioguideId: 'dc', chamber: 'house', state: 'DC', district: 0 }),
+  ];
+
+  it('returns two senators and the at-large representative', () => {
+    const { senators, representative } = membersForDistrict(members, 'WY', 0);
+    expect(senators.map((m) => m.bioguideId)).toEqual(['wy-s1', 'wy-s2']);
+    expect(representative?.bioguideId).toBe('wy-h');
+  });
+
+  it('picks the right numbered district', () => {
+    expect(membersForDistrict(members, 'TX', 9).representative?.bioguideId).toBe('tx-9');
+  });
+
+  it('returns DC’s delegate and no senators', () => {
+    const { senators, representative } = membersForDistrict(members, 'DC', 0);
+    expect(senators).toEqual([]);
+    expect(representative?.bioguideId).toBe('dc');
+  });
+
+  it('returns null for a vacant seat', () => {
+    expect(membersForDistrict(members, 'TX', 18).representative).toBeNull();
+  });
+});
+
+describe('houseMembersInState', () => {
+  it('lists a state’s House members in district order', () => {
+    const members = [
+      member({ bioguideId: 'tx-9', state: 'TX', district: 9 }),
+      member({ bioguideId: 'tx-7', state: 'TX', district: 7 }),
+      member({ bioguideId: 'tx-s', chamber: 'senate', state: 'TX', district: null }),
+    ];
+    expect(houseMembersInState(members, 'TX').map((m) => m.bioguideId)).toEqual(['tx-7', 'tx-9']);
+  });
+});
+
+describe('placeLabel', () => {
+  it('names numbered, at-large, and delegate seats', () => {
+    expect(placeLabel('TX', 7)).toBe('Texas, District 7');
+    expect(placeLabel('WY', 0)).toBe('Wyoming, at-large');
+    expect(placeLabel('DC', 0)).toBe('District of Columbia');
+    expect(placeLabel('PR', 0)).toBe('Puerto Rico');
   });
 });

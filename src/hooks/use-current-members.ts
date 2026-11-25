@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from 'urql';
 
 import { graphql } from '@/gql';
+import { congressOfHouseTerms } from '@/lib/congress';
 import { toMember, type Member } from '@/lib/members';
 
 // Every member whose latest term ends after today (about 540 people), in one request.
@@ -21,6 +22,7 @@ const CurrentMembersQuery = graphql(`
           party
           state
           district
+          startDate
           endDate
         }
       }
@@ -45,8 +47,17 @@ export function useCurrentMembers() {
     });
   }, [result.data, today]);
 
+  // Which Congress this data describes, from House term start dates. District lookups
+  // must use the Census map for this Congress, not whichever map is newest.
+  const congress = useMemo(
+    () => congressOfHouseTerms(members.filter((m) => m.chamber === 'house').map((m) => m.termStart)),
+    [members]
+  );
+
   return {
     members,
+    congress,
+    today,
     totalCount: result.data?.allLegislators?.totalCount ?? 0,
     loading: result.fetching,
     error: result.error,

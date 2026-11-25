@@ -89,6 +89,6 @@ their recent votes; then find your own members by address, location, or ZIP.
 - [x] 0002 · Clear out the starter template and add a basic app shell (after 0001) → tasks/done/0002-app-shell.md
 - [x] 0003 · Browse the current Congress (home screen) (after 0001, 0002) → tasks/done/0003-browse-congress.md
 - [x] 0004 · Member screen with recent votes (after 0002, 0003) → tasks/done/0004-member-recent-votes.md
-- [ ] 0005 · Find my members: address or current location (after 0003) → tasks/0005-find-my-members.md
+- [x] 0005 · Find my members: address or current location (after 0003) → tasks/done/0005-find-my-members.md
 - [ ] 0006 · ZIP code entry with district disambiguation (after 0005) → tasks/0006-zip-lookup.md
 - [ ] 0007 · Keep data across app restarts (after 0003, 0004) → tasks/0007-persist-cache.md

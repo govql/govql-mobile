@@ -1,6 +1,6 @@
-import { Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { SectionList, StyleSheet, View } from 'react-native';
+import { Link, Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import { MemberRow } from '@/components/member-row';
 import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states';
@@ -9,7 +9,8 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCurrentMembers } from '@/hooks/use-current-members';
 import { useTheme } from '@/hooks/use-theme';
-import { groupByChamber, matchesSearch } from '@/lib/members';
+import { groupByChamber, matchesSearch, placeLabel } from '@/lib/members';
+import { loadSavedDistrict } from '@/lib/saved-district';
 
 // Home: every currently serving member, in Senate and House sections, searchable by name or
 // state. All filtering happens on the device; the list is fetched once.
@@ -64,9 +65,12 @@ export default function HomeScreen() {
         )}
         ListHeaderComponent={
           query ? undefined : (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.listHeader}>
-              {totalCount} members currently serving
-            </ThemedText>
+            <View>
+              <MyMembersEntry />
+              <ThemedText type="small" themeColor="textSecondary" style={styles.listHeader}>
+                {totalCount} members currently serving
+              </ThemedText>
+            </View>
           )
         }
         ListEmptyComponent={
@@ -92,7 +96,49 @@ export default function HomeScreen() {
   );
 }
 
+/** Card linking to "Find my members", or to the saved district's members. */
+function MyMembersEntry() {
+  const theme = useTheme();
+  const [saved, setSaved] = useState(() => loadSavedDistrict());
+  useFocusEffect(
+    useCallback(() => {
+      setSaved(loadSavedDistrict());
+    }, [])
+  );
+
+  const title = saved ? 'Your members' : 'Find my members';
+  const detail = saved
+    ? placeLabel(saved.state, saved.district)
+    : 'Use your address or location to see your senators and representative.';
+
+  return (
+    <Link href="/my-members" asChild>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={`${title}. ${detail}`}
+        style={({ pressed }) => [
+          styles.entry,
+          { backgroundColor: pressed ? theme.backgroundSelected : theme.backgroundElement },
+        ]}>
+        <ThemedText type="smallBold" style={{ color: theme.accent }}>
+          {title} ›
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {detail}
+        </ThemedText>
+      </Pressable>
+    </Link>
+  );
+}
+
 const styles = StyleSheet.create({
+  entry: {
+    margin: Spacing.three,
+    marginBottom: 0,
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+    gap: Spacing.half,
+  },
   container: {
     flex: 1,
     alignItems: 'center',
