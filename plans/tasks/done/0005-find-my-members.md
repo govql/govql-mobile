@@ -85,21 +85,38 @@ the members serving it from the current-members list the app already has.
 
 ## AFK tasks
 
-- [ ] Location module: address or coordinates → Census Geocoder → `{ state, district }`, with typed errors for "not found", "ambiguous", "permission denied", and "network". Design its input type so task 0006 can add ZIP without reshaping it.
-- [ ] "Use my location" button via `npx expo install expo-location`; permission message set through its config plugin in `app.json`.
-- [ ] Pick the members from the cached current-members list (no new query): two senators plus one House member. Reuse the 0003 helpers for names, seat labels, and current terms. For DC and the territories, show the delegate and explain there are no senators.
-- [ ] Target Congress from GovQL's House term start dates; choose the Census vintage whose district layer matches it.
-- [ ] "Choose my state and district" fallback: state list, then districts with representatives' names.
-- [ ] Screen: input, loading state, error states, and the three member cards (name, chamber, party, state/district).
-- [ ] Persist the last location on the device; offer "change location".
-- [ ] Unit tests for the location module (stubbed HTTP), including the at-large and DC cases.
+- [x] Location module: address or coordinates → Census Geocoder → `{ state, district }`, with typed errors for "not found", "ambiguous", "permission denied", and "network". Design its input type so task 0006 can add ZIP without reshaping it.
+- [x] "Use my location" button via `npx expo install expo-location`; permission message set through its config plugin in `app.json`.
+- [x] Pick the members from the cached current-members list (no new query): two senators plus one House member. Reuse the 0003 helpers for names, seat labels, and current terms. For DC and the territories, show the delegate and explain there are no senators.
+- [x] Target Congress from GovQL's House term start dates; choose the Census vintage whose district layer matches it.
+- [x] "Choose my state and district" fallback: state list, then districts with representatives' names.
+- [x] Screen: input, loading state, error states, and the three member cards (name, chamber, party, state/district).
+- [x] Persist the last location on the device; offer "change location".
+- [x] Unit tests for the location module (stubbed HTTP), including the at-large and DC cases.
 
 ## Human-in-the-loop tasks
 
-- [ ] [verify] Try your own address, an at-large state (e.g. Wyoming), a DC address, and "Use my location" on a physical phone (allow it once, and deny it once).
+- [-] [verify] Try your own address, an at-large state (e.g. Wyoming), a DC address, and "Use my location" on a physical phone (allow it once, and deny it once). Checked in the iOS Simulator only; the physical phone is blocked on the Expo Go sign-in.
 
 ## Acceptance criteria
 
-- [ ] A valid state address shows exactly two senators and one House member, all currently serving; a DC or territory address shows its delegate.
-- [ ] Ambiguous, unknown, and offline cases each show a clear message instead of failing silently.
-- [ ] No address is sent to GovQL, stored remotely, or written to logs.
+- [x] A valid state address shows exactly two senators and one House member, all currently serving; a DC or territory address shows its delegate.
+- [x] Ambiguous, unknown, and offline cases each show a clear message instead of failing silently.
+- [x] No address is sent to GovQL, stored remotely, or written to logs.
+
+## Log
+
+- 2026-11-25: The Census Geocoder's `Current_Current` vintage already returns the 120th
+  Congress's districts, while the members in office are the 119th. Fixed by matching the
+  vintage's district layer to the Congress taken from GovQL's House term start dates
+  (option B above). When the 120th Congress is sworn in, `Current_Current` will match
+  again with no code change.
+- 2026-11-25: Saved with `expo-sqlite/kv-store` under the key `myDistrict:v1`; only
+  `{ state, district, congress }` is kept. Task 0007 can reuse the same store.
+- 2026-11-25: Known gap: vacant House seats (2 at the time of writing) have no member, so
+  they don't appear in the "Choose my district" list. The address and location lookups
+  still find them and show "This seat is currently vacant."
+- 2026-11-25: Checked in the iOS Simulator: address lookup, "Use my location" (the
+  Simulator's default San Francisco location returned Pelosi's district), and the
+  state-and-district picker. Not checked on a physical phone (Expo Go sign-in) or on a
+  small screen.
