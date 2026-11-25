@@ -34,6 +34,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "GovQL uses your location once to find your congressional district. Your location is not stored or sent to GovQL."
+        }
       ]
     ],
     "experiments": {

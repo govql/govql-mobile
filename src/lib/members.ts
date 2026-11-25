@@ -12,11 +12,14 @@ export type Member = {
   state: string;
   /** House district; 0 for at-large seats and delegates; null for senators. */
   district: number | null;
+  /** Start of the current term (YYYY-MM-DD), used to tell which Congress the data is for. */
+  termStart: string | null;
 };
 
 /** A term as the API returns it (fields may be missing). */
 export type TermInput = {
   termType?: string | null;
+  startDate?: string | null;
   party?: string | null;
   state?: string | null;
   district?: number | null;
@@ -112,7 +115,40 @@ export function toMember(legislator: LegislatorInput, today: string): Member | n
     party: term.party ?? 'Party unknown',
     state: term.state ?? '',
     district: term.district ?? null,
+    termStart: term.startDate ?? null,
   };
+}
+
+/**
+ * The members serving one place: its senators (none for DC and the territories) and its
+ * House member or delegate (null if the seat is vacant). District 0 = at-large or delegate.
+ */
+export function membersForDistrict(
+  members: readonly Member[],
+  state: string,
+  district: number
+): { senators: Member[]; representative: Member | null } {
+  const senators = members
+    .filter((m) => m.chamber === 'senate' && m.state === state)
+    .sort((a, b) => a.lastName.localeCompare(b.lastName));
+  const representative =
+    members.find((m) => m.chamber === 'house' && m.state === state && (m.district ?? 0) === district) ??
+    null;
+  return { senators, representative };
+}
+
+/** "Texas, District 7", "Wyoming, at-large", "District of Columbia" (delegate seats). */
+export function placeLabel(state: string, district: number): string {
+  const name = STATE_NAMES[state] ?? state;
+  if (state in DELEGATE_TITLES) return name;
+  return district === 0 ? `${name}, at-large` : `${name}, District ${district}`;
+}
+
+/** A state's House members (or its delegate), in district order, for the district picker. */
+export function houseMembersInState(members: readonly Member[], state: string): Member[] {
+  return members
+    .filter((m) => m.chamber === 'house' && m.state === state)
+    .sort((a, b) => (a.district ?? 0) - (b.district ?? 0));
 }
 
 /** Lowercase and strip accents, so "jose" matches "José". */
