@@ -3,13 +3,15 @@
 // coordinates passed in here. Unit-tested in __tests__/ with a stubbed fetch.
 
 import { ordinal } from '@/lib/congress';
+import { lookupZip, type ZipTable } from '@/lib/zip-lookup';
 
 const CENSUS_BASE = 'https://geocoding.geo.census.gov/geocoder/geographies';
 
-/** Where the user is. Task 0006 adds a ZIP variant handled on the device. */
+/** Where the user is. ZIPs are looked up on the device (see zip-lookup.ts), not by Census. */
 export type LocationQuery =
   | { kind: 'address'; address: string }
-  | { kind: 'coordinates'; latitude: number; longitude: number };
+  | { kind: 'coordinates'; latitude: number; longitude: number }
+  | { kind: 'zip'; zip: string };
 
 /** A congressional seat. District 0 = at-large state, or a delegate (DC, territories). */
 export type District = { state: string; district: number; congress: number };
@@ -22,9 +24,14 @@ export type LookupError =
   /** No Census district map for the Congress the app is showing. */
   | 'noMatchingMap'
   /** Offline, timed out, or the Census service failed. */
-  | 'network';
+  | 'network'
+  /** The bundled ZIP table is for a different Congress than the members shown. */
+  | 'zipNotUpdated';
 
-export type LookupResult = { ok: true; district: District } | { ok: false; error: LookupError };
+export type LookupResult =
+  | { ok: true; district: District }
+  /** `choices` is set when a ZIP spans districts: the user picks one. */
+  | { ok: false; error: LookupError; choices?: District[] };
 
 type Fetch = (url: string) => Promise<{ ok: boolean; json: () => Promise<unknown> }>;
 
@@ -66,7 +73,7 @@ function layerCongress(geographies: Geographies): number | null {
   return null;
 }
 
-function buildUrl(query: LocationQuery, vintage: string): string {
+function buildUrl(query: Exclude<LocationQuery, { kind: 'zip' }>, vintage: string): string {
   const params = new URLSearchParams({ benchmark: 'Public_AR_Current', vintage, format: 'json' });
   if (query.kind === 'address') {
     params.set('address', query.address);
@@ -96,8 +103,9 @@ function matchesOf(body: unknown): Geographies[] {
 export async function lookupDistrict(
   query: LocationQuery,
   targetCongress: number,
-  options: { today: string; fetchFn?: Fetch }
+  options: { today: string; fetchFn?: Fetch; zipTable?: ZipTable }
 ): Promise<LookupResult> {
+  if (query.kind === 'zip') return lookupZip(query.zip, targetCongress, options.zipTable);
   const fetchFn: Fetch = options.fetchFn ?? ((url) => fetch(url));
   if (query.kind === 'address' && !query.address.trim()) return { ok: false, error: 'notFound' };
 

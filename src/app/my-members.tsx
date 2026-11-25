@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { DistrictRow } from '@/components/district-row';
 import { MemberRow } from '@/components/member-row';
 import { ErrorState, LoadingState } from '@/components/screen-states';
 import { ThemedText } from '@/components/themed-text';
@@ -14,8 +15,9 @@ import { ordinal } from '@/lib/congress';
 import { lookupDistrict, type District, type LocationQuery, type LookupError } from '@/lib/district-lookup';
 import { isDelegate, membersForDistrict, placeLabel, type Member } from '@/lib/members';
 import { clearSavedDistrict, loadSavedDistrict, saveDistrict } from '@/lib/saved-district';
+import { parseZip } from '@/lib/zip-lookup';
 
-type FindError = LookupError | 'permissionDenied' | 'locationUnavailable';
+type FindError = LookupError | 'zipNotFound' | 'permissionDenied' | 'locationUnavailable';
 
 const ERROR_MESSAGES: Record<FindError, string> = {
   notFound:
@@ -29,6 +31,10 @@ const ERROR_MESSAGES: Record<FindError, string> = {
   permissionDenied:
     'Location access is off for GovQL. Type your address instead, or turn on location for GovQL in Settings.',
   locationUnavailable: 'Couldn’t get your location. Try again, or type your address instead.',
+  zipNotFound:
+    'We couldn’t find that ZIP code. Some ZIP codes, such as PO boxes, aren’t on the Census district maps. Enter your street address instead.',
+  zipNotUpdated:
+    'ZIP code lookup hasn’t been updated for the new congressional districts yet. Enter your street address or use your location instead.',
 };
 
 // Find my members: address, current location, or choosing a district. Only the resulting
@@ -81,6 +87,7 @@ export default function MyMembersScreen() {
         />
       ) : (
         <FindForm
+          members={members}
           congress={congress}
           today={today}
           onFound={onFound}
@@ -159,11 +166,13 @@ function SavedMembers({
 }
 
 function FindForm({
+  members,
   congress,
   today,
   onFound,
   onChoose,
 }: {
+  members: Member[];
   congress: number | null;
   today: string;
   onFound: (district: District) => void;
@@ -173,6 +182,8 @@ function FindForm({
   const [address, setAddress] = useState('');
   const [busy, setBusy] = useState<'address' | 'location' | null>(null);
   const [findError, setFindError] = useState<FindError | null>(null);
+  // Districts a ZIP code spans, for the user to pick from (never picked for them).
+  const [choices, setChoices] = useState<{ zip: string; districts: District[] } | null>(null);
 
   const find = async (query: LocationQuery) => {
     if (congress === null) {
@@ -181,21 +192,30 @@ function FindForm({
     }
     const result = await lookupDistrict(query, congress, { today });
     if (result.ok) onFound(result.district);
+    else if (query.kind === 'zip' && result.choices) setChoices({ zip: query.zip, districts: result.choices });
+    else if (query.kind === 'zip' && result.error === 'notFound') setFindError('zipNotFound');
     else setFindError(result.error);
   };
 
-  const findByAddress = async () => {
+  const reset = () => {
     setFindError(null);
+    setChoices(null);
+  };
+
+  // The field takes a street address or a ZIP code; a ZIP is looked up on the phone.
+  const findByAddress = async () => {
+    reset();
     setBusy('address');
     try {
-      await find({ kind: 'address', address });
+      const zip = parseZip(address);
+      await find(zip ? { kind: 'zip', zip } : { kind: 'address', address });
     } finally {
       setBusy(null);
     }
   };
 
   const findByLocation = async () => {
-    setFindError(null);
+    reset();
     setBusy('location');
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -224,15 +244,19 @@ function FindForm({
     <View style={styles.section}>
       <ThemedText type="subtitle">Find my members</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Enter your home address to see your two senators and your representative in the House.
+        Enter your home address or ZIP code to see your two senators and your representative in
+        the House.
       </ThemedText>
 
       <TextInput
         value={address}
-        onChangeText={setAddress}
-        placeholder="Street address, city, state"
+        onChangeText={(text) => {
+          setAddress(text);
+          setChoices(null);
+        }}
+        placeholder="Street address, or ZIP code"
         placeholderTextColor={theme.textSecondary}
-        accessibilityLabel="Home address"
+        accessibilityLabel="Home address or ZIP code"
         autoComplete="street-address"
         textContentType="fullStreetAddress"
         autoCorrect={false}
@@ -255,6 +279,15 @@ function FindForm({
         disabled={busy !== null}
       />
 
+      {choices ? (
+        <ZipChoices
+          zip={choices.zip}
+          districts={choices.districts}
+          members={members}
+          onChoose={onFound}
+        />
+      ) : null}
+
       {findError ? (
         <ThemedText type="small" style={{ color: theme.danger }} accessibilityLiveRegion="polite" accessibilityRole="alert">
           {ERROR_MESSAGES[findError]}
@@ -264,8 +297,47 @@ function FindForm({
       <Button label="Choose my state and district" variant="link" onPress={onChoose} disabled={busy !== null} />
 
       <ThemedText type="small" themeColor="textSecondary" style={styles.privacy}>
-        Your address or location is sent only to the U.S. Census Bureau to find your district. GovQL
-        doesn’t receive or store it; only your state and district are kept on this phone.
+        Your address or location is sent only to the U.S. Census Bureau to find your district. A ZIP
+        code is looked up on this phone and isn’t sent anywhere. GovQL doesn’t receive or store any
+        of them; only your state and district are kept on this phone.
+      </ThemedText>
+    </View>
+  );
+}
+
+/** A ZIP code that spans districts: list every one, with its member, for the user to pick. */
+function ZipChoices({
+  zip,
+  districts,
+  members,
+  onChoose,
+}: {
+  zip: string;
+  districts: District[];
+  members: Member[];
+  onChoose: (district: District) => void;
+}) {
+  const theme = useTheme();
+  return (
+    <View style={styles.choices}>
+      <ThemedText type="small" accessibilityLiveRegion="polite">
+        ZIP code {zip} is in {districts.length} congressional districts. Choose yours:
+      </ThemedText>
+      <View style={[styles.choiceList, { borderColor: theme.border }]}>
+        {districts.map((d, i) => (
+          <View key={`${d.state}-${d.district}`}>
+            {i > 0 ? <View style={[styles.separator, { backgroundColor: theme.border }]} /> : null}
+            <DistrictRow
+              state={d.state}
+              district={d.district}
+              member={membersForDistrict(members, d.state, d.district).representative}
+              onPress={() => onChoose(d)}
+            />
+          </View>
+        ))}
+      </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        Not sure which? Enter your full street address above, or use your location.
       </ThemedText>
     </View>
   );
@@ -297,5 +369,18 @@ const styles = StyleSheet.create({
   },
   privacy: {
     paddingTop: Spacing.three,
+  },
+  choices: {
+    gap: Spacing.two,
+    paddingTop: Spacing.two,
+  },
+  choiceList: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: Spacing.two,
+    overflow: 'hidden',
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: Spacing.three,
   },
 });
