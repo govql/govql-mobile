@@ -4,6 +4,7 @@ import {
   currentTerm,
   displayName,
   groupByChamber,
+  isDelegate,
   matchesSearch,
   seatLabel,
   toMember,
@@ -59,6 +60,15 @@ describe('seatLabel', () => {
     expect(seatLabel({ chamber: 'house', state: 'DC', district: 0 })).toBe('Delegate, DC');
     expect(seatLabel({ chamber: 'house', state: 'GU', district: 0 })).toBe('Delegate, GU');
     expect(seatLabel({ chamber: 'house', state: 'PR', district: 0 })).toBe('Resident Commissioner, PR');
+  });
+});
+
+describe('isDelegate', () => {
+  it('is true only for House members from DC and the territories', () => {
+    expect(isDelegate({ chamber: 'house', state: 'DC' })).toBe(true);
+    expect(isDelegate({ chamber: 'house', state: 'PR' })).toBe(true);
+    expect(isDelegate({ chamber: 'house', state: 'WY' })).toBe(false);
+    expect(isDelegate({ chamber: 'senate', state: 'WY' })).toBe(false);
   });
 });
 
