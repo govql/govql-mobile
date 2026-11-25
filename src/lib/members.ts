@@ -42,6 +42,11 @@ const DELEGATE_TITLES: Record<string, string> = {
   PR: 'Resident Commissioner',
 };
 
+/** True for DC's and the territories' non-voting House members. */
+export function isDelegate(member: Pick<Member, 'chamber' | 'state'>): boolean {
+  return member.chamber === 'house' && member.state in DELEGATE_TITLES;
+}
+
 export const STATE_NAMES: Record<string, string> = {
   AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
   CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',

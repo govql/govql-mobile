@@ -1,21 +1,27 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { EmptyState, LoadingState } from '@/components/screen-states';
+import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCurrentMembers } from '@/hooks/use-current-members';
-import { seatLabel } from '@/lib/members';
+import { useRecentVotes, type RecentVote } from '@/hooks/use-recent-votes';
+import { useTheme } from '@/hooks/use-theme';
+import { isDelegate, seatLabel, type Member } from '@/lib/members';
+import { formatVoteDate, positionLabel } from '@/lib/votes';
 
-// Member screen. Task 0004 adds the member's recent votes. For now it shows who they are,
-// read from the current-members list that the home screen has already cached (no new request).
+// Member screen: who they are (from the cached members list, no extra request) and their
+// 10 most recent roll-call votes (one request).
 export default function MemberScreen() {
+  const theme = useTheme();
   const { bioguideId } = useLocalSearchParams<'/member/[bioguideId]'>();
-  const { members, loading } = useCurrentMembers();
+  const { members, loading: membersLoading } = useCurrentMembers();
   const member = members.find((m) => m.bioguideId === bioguideId);
+  const { votes, loading, error, refetch } = useRecentVotes(bioguideId);
 
   if (!member) {
-    return loading ? (
+    return membersLoading ? (
       <LoadingState label="Loading member…" />
     ) : (
       <EmptyState
@@ -26,25 +32,119 @@ export default function MemberScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+    <>
       <Stack.Screen options={{ title: member.name }} />
+      <FlatList
+        data={votes}
+        keyExtractor={(vote) => vote.voteId}
+        renderItem={({ item }) => <VoteRow vote={item} />}
+        ListHeaderComponent={<MemberHeader member={member} />}
+        ListEmptyComponent={
+          loading ? (
+            <LoadingState label="Loading recent votes…" />
+          ) : error ? (
+            <ErrorState
+              message="Couldn’t load recent votes. Check your connection and try again."
+              detail={error.message}
+              onRetry={refetch}
+            />
+          ) : isDelegate(member) ? (
+            <EmptyState
+              title="No roll-call votes"
+              message="Delegates and the Resident Commissioner can’t vote on bills on the House floor, so they have no roll-call votes to show. They can vote in committee."
+            />
+          ) : (
+            <EmptyState title="No recorded votes yet" />
+          )
+        }
+        ItemSeparatorComponent={() => (
+          <View style={[styles.separator, { backgroundColor: theme.border }]} />
+        )}
+        onRefresh={refetch}
+        refreshing={loading && votes.length > 0}
+        // The stack header and home indicator set the insets (iOS 26 headers are transparent).
+        contentInsetAdjustmentBehavior="automatic"
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+      />
+    </>
+  );
+}
+
+function MemberHeader({ member }: { member: Member }) {
+  return (
+    <View style={styles.header}>
       <ThemedText type="subtitle">{member.name}</ThemedText>
       <ThemedText themeColor="textSecondary">
         {seatLabel(member)} · {member.party}
       </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-        Recent votes will appear here.
+      <ThemedText type="smallBold" accessibilityRole="header" style={styles.sectionTitle}>
+        Recent votes
       </ThemedText>
-    </ScrollView>
+    </View>
+  );
+}
+
+function VoteRow({ vote }: { vote: RecentVote }) {
+  const theme = useTheme();
+  const { sourceUrl } = vote;
+  const position = positionLabel(vote.position);
+  const content = (
+    <>
+      <ThemedText type="small" themeColor="textSecondary">
+        {formatVoteDate(vote.votedAt)}
+      </ThemedText>
+      {/* The vote's own question text, not a paraphrase (see task 0004, "Neutral wording"). */}
+      <ThemedText type="small">{vote.question}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Result: {vote.result ?? 'Not recorded'}
+      </ThemedText>
+      <ThemedText type="smallBold">Voted: {position}</ThemedText>
+      {sourceUrl ? (
+        <ThemedText type="small" style={{ color: theme.accent }}>
+          Official record ›
+        </ThemedText>
+      ) : null}
+    </>
+  );
+
+  if (!sourceUrl) return <View style={styles.row}>{content}</View>;
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`${formatVoteDate(vote.votedAt)}. ${vote.question}. Result: ${vote.result ?? 'not recorded'}. Voted: ${position}. Opens the official record.`}
+      onPress={() => WebBrowser.openBrowserAsync(sourceUrl)}
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.backgroundSelected }]}>
+      {content}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: Spacing.three,
-    gap: Spacing.two,
+  list: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
   },
-  note: {
+  listContent: {
+    paddingBottom: Spacing.four,
+  },
+  header: {
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+  sectionTitle: {
     paddingTop: Spacing.three,
+  },
+  row: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    gap: Spacing.one,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: Spacing.three,
   },
 });
