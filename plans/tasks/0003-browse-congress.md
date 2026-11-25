@@ -15,8 +15,9 @@ and tested before task 0005.
 ## Design notes
 
 - **One request**: fetch all current members (about 541) with task 0001's
-  `CurrentMembers` query and cache the result on the device. Search and sectioning happen
-  on the device, with no request per keystroke.
+  `CurrentMembers` query, cached in memory by urql (one request per app launch; moving
+  between screens makes none). Keeping it across restarts is task 0007. Search and
+  sectioning happen on the device, with no request per keystroke.
 - **Rows**: name (`officialFull`, falling back to `firstName lastName`), chamber, party,
   state, and district. Party is spelled out in text, never shown by colour alone.
 - **Delegates are included**: DC, Guam, the U.S. Virgin Islands, American Samoa, and the
@@ -47,5 +48,5 @@ and tested before task 0005.
 ## Acceptance criteria
 
 - [ ] The home screen lists every currently serving member, including delegates, and no former members.
-- [ ] The screen makes one API request per visit (zero when cached).
+- [ ] The screen makes one API request per app launch, and none when returning from a member screen.
 - [ ] Tapping a member opens the member route.
