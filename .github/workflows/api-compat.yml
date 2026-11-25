@@ -38,6 +38,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Unit tests
+        run: npm test -- --ci
+
       - name: Generated types are up to date
         run: |
           if ! git diff --exit-code -- src/gql; then
