@@ -58,23 +58,23 @@ only, so every launch refetches.
 
 ## AFK tasks
 
-- [ ] Storage: reuse `expo-sqlite/kv-store`, chosen in task 0005 (in Expo Go, sync read). Revisit only if the data outgrows key-value storage.
-- [ ] Persist and restore the current-members list with `fetchedAt` and a versioned key.
-- [ ] Same for each member's recent votes (task 0004).
-- [ ] Background refresh when older than the refresh age; pull-to-refresh forces it.
-- [ ] Non-blocking "Couldn't refresh" notice when showing saved data after a failed refresh.
-- [ ] Unit tests: freshness check, version mismatch discarded, ended terms filtered out of a saved list.
+- [x] Storage: reuse `expo-sqlite/kv-store`, chosen in task 0005 (in Expo Go, sync read). Revisit only if the data outgrows key-value storage.
+- [x] Persist and restore the current-members list with `fetchedAt` and a versioned key.
+- [x] Same for each member's recent votes (task 0004).
+- [x] Background refresh when older than the refresh age; pull-to-refresh forces it.
+- [x] Non-blocking "Couldn't refresh" notice when showing saved data after a failed refresh.
+- [x] Unit tests: freshness check, version mismatch discarded, ended terms filtered out of a saved list.
 
 ## Human-in-the-loop tasks
 
-- [ ] [verify] Launch, quit, turn on Airplane Mode, relaunch: the list and a previously opened member's votes still show.
-- [ ] [verify] With a saved list, pull to refresh while offline: the saved list stays, with the notice.
+- [x] [verify] Launch, quit, turn on Airplane Mode, relaunch: the list and a previously opened member's votes still show.
+- [x] [verify] With a saved list, pull to refresh while offline: the saved list stays, with the notice.
 
 ## Acceptance criteria
 
-- [ ] A relaunch within the refresh age makes no members request.
-- [ ] The app shows saved data offline, and never shows a member whose term has ended.
-- [ ] Nothing about the user (address, location) is written by this task.
+- [x] A relaunch within the refresh age makes no members request.
+- [x] The app shows saved data offline, and never shows a member whose term has ended.
+- [x] Nothing about the user (address, location) is written by this task.
 
 ## Log
 
