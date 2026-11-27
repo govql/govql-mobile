@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { formatSavedAt } from '@/lib/saved-data';
 
 // Full-screen loading, error, and empty states shared by every data screen.
 
@@ -67,6 +68,20 @@ export function EmptyState({ title, message }: { title: string; message?: string
   );
 }
 
+/** Small, non-blocking notice: a refresh failed, so the screen shows data saved earlier. */
+export function SavedDataNotice({ savedAt }: { savedAt: number }) {
+  const theme = useTheme();
+  return (
+    <ThemedText
+      type="small"
+      themeColor="textSecondary"
+      accessibilityLiveRegion="polite"
+      style={[styles.notice, { backgroundColor: theme.backgroundElement }]}>
+      Couldn’t refresh. Showing data saved on {formatSavedAt(savedAt)}.
+    </ThemedText>
+  );
+}
+
 const styles = StyleSheet.create({
   centered: {
     flex: 1,
@@ -77,6 +92,13 @@ const styles = StyleSheet.create({
   },
   textCenter: {
     textAlign: 'center',
+  },
+  notice: {
+    marginHorizontal: Spacing.three,
+    marginTop: Spacing.three,
+    padding: Spacing.two,
+    borderRadius: Spacing.two,
+    overflow: 'hidden',
   },
   button: {
     borderWidth: 1,

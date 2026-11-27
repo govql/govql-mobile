@@ -2,7 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states';
+import { EmptyState, ErrorState, LoadingState, SavedDataNotice } from '@/components/screen-states';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCurrentMembers } from '@/hooks/use-current-members';
@@ -18,7 +18,7 @@ export default function MemberScreen() {
   const { bioguideId } = useLocalSearchParams<{ bioguideId: string }>();
   const { members, loading: membersLoading } = useCurrentMembers();
   const member = members.find((m) => m.bioguideId === bioguideId);
-  const { votes, loading, error, refetch } = useRecentVotes(bioguideId);
+  const { votes, loading, error, refreshFailed, savedAt, refetch } = useRecentVotes(bioguideId);
 
   if (!member) {
     return membersLoading ? (
@@ -38,7 +38,12 @@ export default function MemberScreen() {
         data={votes}
         keyExtractor={(vote) => vote.voteId}
         renderItem={({ item }) => <VoteRow vote={item} />}
-        ListHeaderComponent={<MemberHeader member={member} />}
+        ListHeaderComponent={
+          <>
+            {refreshFailed && savedAt !== null ? <SavedDataNotice savedAt={savedAt} /> : null}
+            <MemberHeader member={member} />
+          </>
+        }
         ListEmptyComponent={
           loading ? (
             <LoadingState label="Loading recent votes…" />

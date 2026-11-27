@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
-import { useQuery } from 'urql';
 
 import { graphql } from '@/gql';
+import type { RecentVotesQuery as RecentVotesData } from '@/gql/graphql';
+import { useSavedQuery } from '@/hooks/use-saved-query';
+import { HOUR } from '@/lib/saved-data';
 
 // A member's 10 most recent roll-call votes, newest first, with how they voted.
 // `vote_positions` has no date, so this filters `votes` to ones the member took part in.
@@ -30,6 +32,13 @@ const RecentVotesQuery = graphql(`
   }
 `);
 
+// New votes come in most days Congress sits, so saved votes are reused for an hour.
+const MAX_AGE = HOUR;
+
+function isVotesData(data: unknown): data is RecentVotesData {
+  return Array.isArray((data as RecentVotesData | null)?.allVotes?.nodes);
+}
+
 export type RecentVote = {
   voteId: string;
   chamber: string | null;
@@ -42,14 +51,18 @@ export type RecentVote = {
 };
 
 export function useRecentVotes(bioguideId: string) {
-  const [result, reexecute] = useQuery({
+  // Saved per member, e.g. under "votes:B001261:…".
+  const { data, fetching, error, refreshFailed, savedAt, refetch } = useSavedQuery({
     query: RecentVotesQuery,
     variables: { id: bioguideId },
+    name: `votes:${bioguideId}`,
+    maxAgeMs: MAX_AGE,
+    isValid: isVotesData,
     pause: !bioguideId,
   });
 
   const votes = useMemo<RecentVote[]>(() => {
-    const nodes = result.data?.allVotes?.nodes ?? [];
+    const nodes = data?.allVotes?.nodes ?? [];
     return nodes.flatMap((node) => {
       if (!node) return [];
       return [
@@ -64,12 +77,7 @@ export function useRecentVotes(bioguideId: string) {
         },
       ];
     });
-  }, [result.data]);
+  }, [data]);
 
-  return {
-    votes,
-    loading: result.fetching,
-    error: result.error,
-    refetch: () => reexecute({ requestPolicy: 'network-only' }),
-  };
+  return { votes, loading: fetching, error, refreshFailed, savedAt, refetch };
 }

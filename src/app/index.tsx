@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import { MemberRow } from '@/components/member-row';
-import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states';
+import { EmptyState, ErrorState, LoadingState, SavedDataNotice } from '@/components/screen-states';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -16,7 +16,7 @@ import { loadSavedDistrict } from '@/lib/saved-district';
 // state. All filtering happens on the device; the list is fetched once.
 export default function HomeScreen() {
   const theme = useTheme();
-  const { members, totalCount, loading, error, refetch } = useCurrentMembers();
+  const { members, totalCount, loading, error, refreshFailed, savedAt, refetch } = useCurrentMembers();
   const [query, setQuery] = useState('');
 
   const sections = useMemo(
@@ -64,14 +64,17 @@ export default function HomeScreen() {
           <View style={[styles.separator, { backgroundColor: theme.border }]} />
         )}
         ListHeaderComponent={
-          query ? undefined : (
-            <View>
-              <MyMembersEntry />
-              <ThemedText type="small" themeColor="textSecondary" style={styles.listHeader}>
-                {totalCount} members currently serving
-              </ThemedText>
-            </View>
-          )
+          <View>
+            {refreshFailed && savedAt !== null ? <SavedDataNotice savedAt={savedAt} /> : null}
+            {query ? null : (
+              <>
+                <MyMembersEntry />
+                <ThemedText type="small" themeColor="textSecondary" style={styles.listHeader}>
+                  {totalCount} members currently serving
+                </ThemedText>
+              </>
+            )}
+          </View>
         }
         ListEmptyComponent={
           query ? (
