@@ -18,6 +18,23 @@ only, so every launch refetches.
 - Fewer requests: the API limits each IP to 100 requests a minute, and phones on mobile
   networks often share IPs (see "API limits" in `PLAN.md`).
 
+## Decisions (2026-11-26)
+
+- **Storage**: `expo-sqlite/kv-store`, as in task 0005. Each key is read from storage once
+  per app session, then served from memory (four screens use the members list).
+- **What is saved**: each query's raw API result plus `fetchedAt`. Members are re-mapped
+  (and every term re-checked against today) on every read.
+- **Keys**: `members:<fingerprint>` and `votes:<bioguideId>:<fingerprint>`, where the
+  fingerprint is a hash of the query text. Editing a query makes old saved data be ignored
+  automatically, with no manual version bump; a shape check guards the rest.
+- **Refresh ages**: members 24 hours, votes 1 hour. Whether to skip the network is decided
+  once, when a screen opens; pull to refresh always fetches (it un-pauses a paused query
+  rather than relying on how urql treats refetching a paused query).
+- **Shared hook**: `src/hooks/use-saved-query.ts` wraps urql's `useQuery`; both data hooks
+  use it.
+- **Votes are never pruned**: about 3 KB per member opened, so about 1.6 MB if every
+  member were opened. Fine for now.
+
 ## Design notes
 
 - **Show saved data first, then refresh in the background when it's old.** Proposed
@@ -58,3 +75,16 @@ only, so every launch refetches.
 - [ ] A relaunch within the refresh age makes no members request.
 - [ ] The app shows saved data offline, and never shows a member whose term has ended.
 - [ ] Nothing about the user (address, location) is written by this task.
+
+## Log
+
+- 2026-11-26: Checked in the iOS Simulator with Wi-Fi off: after a reload, the home list
+  showed at once with no "Couldn't refresh" notice (so no members request was made), a
+  previously opened member's votes showed, and pull to refresh kept the list and showed
+  the notice. Turning Wi-Fi back on and refreshing cleared it.
+- 2026-11-26: To reload the app while offline, start the dev server with
+  `npx expo start --localhost`. By default Expo Go loads the app over the Mac's network
+  address, which goes away with Wi-Fi off, so a reload fails before the app runs.
+- 2026-11-26: When the saved members list is older than 24 hours, the pull-to-refresh
+  spinner shows briefly at launch while it updates in the background.
+- 2026-11-26: Not checked on a physical phone or a small screen.
