@@ -58,21 +58,21 @@ or use their location to settle it.
 
 ## AFK tasks
 
-- [ ] Script (in `scripts/`) that downloads the relationship file and writes the compact lookup; commit the output.
-- [ ] Add ZIP support to the location module, including the "ambiguous" and "not found" results.
-- [ ] Add the ZIP field and the district picker to the "Find my members" screen.
-- [ ] Unit tests: a single-district ZIP, a multi-district ZIP, an at-large state, an unknown ZIP.
-- [ ] Check how much the data file adds to the app bundle; record it in this file's log.
+- [x] Script (in `scripts/`) that downloads the relationship file and writes the compact lookup; commit the output.
+- [x] Add ZIP support to the location module, including the "ambiguous" and "not found" results.
+- [x] Add the ZIP field and the district picker to the "Find my members" screen.
+- [x] Unit tests: a single-district ZIP, a multi-district ZIP, an at-large state, an unknown ZIP.
+- [x] Check how much the data file adds to the app bundle; record it in this file's log.
 
 ## Human-in-the-loop tasks
 
-- [ ] [verify] Try your own ZIP, a ZIP known to span two districts, and a Wyoming ZIP.
+- [x] [verify] Try your own ZIP, a ZIP known to span two districts, and a Wyoming ZIP.
 
 ## Acceptance criteria
 
-- [ ] A single-district ZIP shows the members with no extra step.
-- [ ] A multi-district ZIP always asks the user, and never guesses silently.
-- [ ] The ZIP lookup itself works offline (the GovQL members query still needs a connection).
+- [x] A single-district ZIP shows the members with no extra step.
+- [x] A multi-district ZIP always asks the user, and never guesses silently.
+- [x] The ZIP lookup itself works offline (the GovQL members query still needs a connection).
 
 ## Log
 
@@ -83,3 +83,7 @@ or use their location to settle it.
 - 2026-11-25: No 120th Congress relationship file published yet. From January 3, 2027,
   ZIP entry will show "not updated for the new districts" until the table is rebuilt with
   `npm run build:zip-districts -- --congress 120`.
+- 2026-11-25: Checked in the iOS Simulator: own ZIP, 77002 (lists TX-7 and TX-18), 82001
+  (Wyoming at-large), 20500 (not found), a full street address, and a ZIP lookup with
+  Wi-Fi off after the members list had loaded (works). Not checked on a physical phone
+  or a small screen.
