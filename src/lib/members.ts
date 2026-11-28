@@ -119,6 +119,23 @@ export function toMember(legislator: LegislatorInput, today: string): Member | n
   };
 }
 
+/** A legislator node as the current-members query returns it (live or saved). */
+export type LegislatorNode = Omit<LegislatorInput, 'terms'> & {
+  legislatorTermsByBioguideIdList: readonly (TermInput | null)[];
+};
+
+/**
+ * The members serving today, from the current-members query's nodes. Runs on saved data
+ * too, so a member whose term has ended since it was saved is left out.
+ */
+export function membersFromLegislators(nodes: readonly (LegislatorNode | null)[], today: string): Member[] {
+  return nodes.flatMap((node) => {
+    if (!node) return [];
+    const member = toMember({ ...node, terms: node.legislatorTermsByBioguideIdList }, today);
+    return member ? [member] : [];
+  });
+}
+
 /**
  * The members serving one place: its senators (none for DC and the territories) and its
  * House member or delegate (null if the seat is vacant). District 0 = at-large or delegate.

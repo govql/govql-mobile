@@ -91,4 +91,4 @@ their recent votes; then find your own members by address, location, or ZIP.
 - [x] 0004 · Member screen with recent votes (after 0002, 0003) → tasks/done/0004-member-recent-votes.md
 - [x] 0005 · Find my members: address or current location (after 0003) → tasks/done/0005-find-my-members.md
 - [x] 0006 · ZIP code entry with district disambiguation (after 0005) → tasks/done/0006-zip-lookup.md
-- [ ] 0007 · Keep data across app restarts (after 0003, 0004) → tasks/0007-persist-cache.md
+- [x] 0007 · Keep data across app restarts (after 0003, 0004) → tasks/done/0007-persist-cache.md

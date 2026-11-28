@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
-import { useQuery } from 'urql';
 
 import { graphql } from '@/gql';
+import type { CurrentMembersQuery as CurrentMembersData } from '@/gql/graphql';
+import { useSavedQuery } from '@/hooks/use-saved-query';
 import { congressOfHouseTerms } from '@/lib/congress';
-import { toMember, type Member } from '@/lib/members';
+import { membersFromLegislators, type Member } from '@/lib/members';
+import { HOUR } from '@/lib/saved-data';
 
 // Every member whose latest term ends after today (about 540 people), in one request.
 const CurrentMembersQuery = graphql(`
@@ -30,22 +32,33 @@ const CurrentMembersQuery = graphql(`
   }
 `);
 
+// Membership changes a few times a year, so a saved list is reused for a day.
+const MAX_AGE = 24 * HOUR;
+
+function isMembersData(data: unknown): data is CurrentMembersData {
+  return Array.isArray((data as CurrentMembersData | null)?.allLegislators?.nodes);
+}
+
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 export function useCurrentMembers() {
   const today = useMemo(() => todayIso(), []);
-  const [result, reexecute] = useQuery({ query: CurrentMembersQuery, variables: { today } });
+  // Saved under a fixed name, not by `today`, so yesterday's list is still found.
+  const { data, fetching, error, refreshFailed, savedAt, refetch } = useSavedQuery({
+    query: CurrentMembersQuery,
+    variables: { today },
+    name: 'members',
+    maxAgeMs: MAX_AGE,
+    isValid: isMembersData,
+  });
 
-  const members = useMemo<Member[]>(() => {
-    const nodes = result.data?.allLegislators?.nodes ?? [];
-    return nodes.flatMap((node) => {
-      if (!node) return [];
-      const member = toMember({ ...node, terms: node.legislatorTermsByBioguideIdList }, today);
-      return member ? [member] : [];
-    });
-  }, [result.data, today]);
+  // Re-checks every term against today, so a saved list never shows someone whose term ended.
+  const members = useMemo<Member[]>(
+    () => membersFromLegislators(data?.allLegislators?.nodes ?? [], today),
+    [data, today]
+  );
 
   // Which Congress this data describes, from House term start dates. District lookups
   // must use the Census map for this Congress, not whichever map is newest.
@@ -58,9 +71,12 @@ export function useCurrentMembers() {
     members,
     congress,
     today,
-    totalCount: result.data?.allLegislators?.totalCount ?? 0,
-    loading: result.fetching,
-    error: result.error,
-    refetch: () => reexecute({ requestPolicy: 'network-only' }),
+    // Counted after the term check, so it matches the list shown.
+    totalCount: members.length,
+    loading: fetching,
+    error,
+    refreshFailed,
+    savedAt,
+    refetch,
   };
 }
